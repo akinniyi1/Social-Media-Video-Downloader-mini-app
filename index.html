@@ -4,78 +4,190 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Downloader Mini App</title>
-  <script src="https://unpkg.com/@twa-dev/sdk@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Telegram Analytics SDK -->
   <script src="https://tganalytics.vercel.app/analytics.js" async></script>
   <script>
     window.TgAnalyticsToken = "REPLACE_WITH_YOUR_TOKEN";
   </script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; }
-    .fade-in { animation: fadeIn 1s ease-in forwards; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 1s ease-in forwards; opacity: 0; }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .slide-up { animation: slideUp 0.5s ease-out forwards; opacity: 0; transform: translateY(20px); }
+    @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #1f2937; }
+    ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-gray-900 text-white">
+<body class="bg-gray-900 text-gray-100 overflow-hidden">
 
   <!-- INTRO SCREEN -->
-  <div id="intro" class="flex flex-col items-center justify-center h-screen px-4 text-center fade-in">
-    <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" class="w-20 h-20 mb-4" alt="Male user" />
-    <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" class="w-20 h-20 mb-4" alt="Female user" />
-    <h1 class="text-2xl font-bold mb-2">Welcome to Social Downloader</h1>
-    <p class="text-gray-400">Convert and download videos, audio, and documents from top social apps.</p>
+  <div id="intro" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-800 fade-in">
+    <!-- Animated SVG characters -->
+    <svg id="svg-male" class="w-32 h-32 mb-4 animate-pulse" viewBox="0 0 64 64">
+      <!-- SVG content for male using phone -->
+      <circle cx="32" cy="32" r="30" fill="#374151"/>
+      <text x="32" y="38" text-anchor="middle" font-size="24" fill="#9ca3af">👨‍💻</text>
+    </svg>
+    <svg id="svg-female" class="w-32 h-32 mb-6 animate-pulse" viewBox="0 0 64 64">
+      <!-- SVG content for female using phone -->
+      <circle cx="32" cy="32" r="30" fill="#374151"/>
+      <text x="32" y="38" text-anchor="middle" font-size="24" fill="#9ca3af">👩‍💻</text>
+    </svg>
+    <h1 class="text-3xl font-bold mb-2">Welcome to Social Downloader</h1>
+    <p class="text-gray-400 text-center max-w-md">
+      Convert and download videos, audio, GIFs, and documents from all your favorite social platforms.
+    </p>
   </div>
 
-  <!-- BOT INTERFACE -->
-  <div id="main" class="hidden h-screen p-4 fade-in">
-    <h2 class="text-xl font-semibold mb-4 text-center">📥 Telegram Downloader</h2>
-    <input
-      id="videoUrl"
-      type="text"
-      placeholder="Paste your video URL here..."
-      class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:outline-none mb-4"
-    />
+  <!-- MAIN APP INTERFACE -->
+  <div id="app" class="hidden flex flex-col h-screen">
+    <!-- Header -->
+    <header class="flex items-center justify-between bg-gray-800 p-4 shadow-lg">
+      <h2 class="text-xl font-semibold">📥 Telegram Downloader</h2>
+      <button id="profile-btn" class="text-gray-400 hover:text-white">👤 Profile</button>
+    </header>
 
-    <div class="flex flex-col space-y-3">
-      <button onclick="sendAction('download')" class="bg-blue-600 hover:bg-blue-700 rounded-lg py-2">⬇️ Download Video</button>
-      <button onclick="sendAction('audio')" class="bg-green-600 hover:bg-green-700 rounded-lg py-2">🎧 Convert to Audio</button>
-      <button onclick="sendAction('gif')" class="bg-yellow-600 hover:bg-yellow-700 rounded-lg py-2">🎞️ Convert to GIF</button>
-      <button onclick="sendAction('pdf')" class="bg-purple-600 hover:bg-purple-700 rounded-lg py-2">🖼️ Convert to PDF</button>
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Sidebar -->
+      <nav class="w-1/4 bg-gray-800 p-4 space-y-4 overflow-y-auto">
+        <button onclick="showSection('video')" class="w-full text-left px-3 py-2 rounded hover:bg-gray-700">⬇️ Download Video</button>
+        <button onclick="showSection('audio')" class="w-full text-left px-3 py-2 rounded hover:bg-gray-700">🎧 Audio Converter</button>
+        <button onclick="showSection('gif')" class="w-full text-left px-3 py-2 rounded hover:bg-gray-700">🎞️ GIF Maker</button>
+        <button onclick="showSection('pdf')" class="w-full text-left px-3 py-2 rounded hover:bg-gray-700">🖼️ PDF Converter</button>
+        <button onclick="showSection('support')" class="w-full text-left px-3 py-2 rounded hover:bg-gray-700">💬 Support</button>
+      </nav>
+
+      <!-- Content Panels -->
+      <main class="flex-1 p-6 overflow-y-auto">
+        <!-- Video Downloader Panel -->
+        <section id="video" class="section slide-up">
+          <h3 class="text-2xl font-bold mb-4">⬇️ Download Video</h3>
+          <input id="videoUrl" type="text" placeholder="Paste video URL" class="w-full p-3 mb-4 bg-gray-700 rounded focus:outline-none"/>
+          <button onclick="sendAction('download')" class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg">Download Video</button>
+        </section>
+
+        <!-- Audio Converter Panel -->
+        <section id="audio" class="section hidden slide-up">
+          <h3 class="text-2xl font-bold mb-4">🎧 Convert to Audio</h3>
+          <input id="audioUrl" type="text" placeholder="Paste video URL" class="w-full p-3 mb-4 bg-gray-700 rounded focus:outline-none"/>
+          <button onclick="sendAction('audio')" class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-lg">Convert & Download Audio</button>
+        </section>
+
+        <!-- GIF Maker Panel -->
+        <section id="gif" class="section hidden slide-up">
+          <h3 class="text-2xl font-bold mb-4">🎞️ Make a GIF</h3>
+          <input id="gifUrl" type="text" placeholder="Paste video URL" class="w-full p-3 mb-4 bg-gray-700 rounded focus:outline-none"/>
+          <button onclick="sendAction('gif')" class="w-full bg-yellow-600 hover:bg-yellow-700 py-3 rounded-lg">Convert & Download GIF</button>
+        </section>
+
+        <!-- PDF Converter Panel -->
+        <section id="pdf" class="section hidden slide-up">
+          <h3 class="text-2xl font-bold mb-4">🖼️ Text to PDF</h3>
+          <textarea id="pdfText" rows="6" placeholder="Paste or type text here..." class="w-full p-3 mb-4 bg-gray-700 rounded focus:outline-none"></textarea>
+          <button onclick="sendAction('pdf')" class="w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-lg">Convert & Download PDF</button>
+        </section>
+
+        <!-- Support Panel -->
+        <section id="support" class="section hidden slide-up">
+          <h3 class="text-2xl font-bold mb-4">💬 Support</h3>
+          <textarea id="supportMsg" rows="4" placeholder="Describe your issue..." class="w-full p-3 mb-4 bg-gray-700 rounded focus:outline-none"></textarea>
+          <button onclick="sendSupport()" class="w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-lg">Send to Admin</button>
+        </section>
+
+        <!-- Profile Modal (hidden by default) -->
+        <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+          <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80">
+            <h4 class="text-xl font-semibold mb-4">👤 Your Profile</h4>
+            <p class="mb-2">Username: <span id="profileName">@username</span></p>
+            <p class="mb-2">Plan: <span id="profilePlan">Free</span></p>
+            <p class="mb-6">Downloads used: <span id="profileDownloads">0</span></p>
+            <button onclick="closeProfile()" class="w-full bg-red-600 hover:bg-red-700 py-2 rounded-lg">Close</button>
+          </div>
+        </div>
+      </main>
     </div>
-
-    <div id="result" class="mt-6 text-center text-sm text-gray-400"></div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
 
-    // Auto-transition from intro to main UI
+    // AUTO-TRANSITION FROM INTRO TO APP
     setTimeout(() => {
       document.getElementById('intro').classList.add('hidden');
-      document.getElementById('main').classList.remove('hidden');
+      document.getElementById('app').classList.remove('hidden');
     }, 5000);
 
-    function sendAction(action) {
-      const url = document.getElementById('videoUrl').value.trim();
-      if (!url) {
-        showResult("❌ Please enter a video URL.");
-        return;
-      }
-
-      // For demonstration: simulate response
-      showResult("⏳ Sending request...");
-
-      // You’ll replace this with actual API call to your bot backend if needed
-      setTimeout(() => {
-        showResult(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)} request sent for: ${url}`);
-        // Optionally: call tg.close() to close the Mini App
-      }, 1500);
+    // SECTION NAVIGATION
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
     }
 
-    function showResult(msg) {
-      document.getElementById("result").innerText = msg;
+    // PROFILE MODAL
+    document.getElementById('profile-btn').addEventListener('click', () => {
+      document.getElementById('profileModal').classList.remove('hidden');
+      // Populate with real data via tg.initDataUnsafe
+      document.getElementById('profileName').innerText = '@' + (tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.id);
+      // You can fetch real plan/downloads via backend here
+    });
+    function closeProfile() { document.getElementById('profileModal').classList.add('hidden'); }
+
+    // SEND ACTION TO BACKEND
+    async function sendAction(action) {
+      let inputId = action === 'download' ? 'videoUrl'
+                   : action === 'audio' ? 'audioUrl'
+                   : action === 'gif'   ? 'gifUrl'
+                   : 'pdfText';
+      const value = document.getElementById(inputId).value.trim();
+      if (!value) return alert('Please enter a valid URL or text.');
+
+      // Show loading
+      tg.showPopup({ message: 'Processing ' + action + '...', buttons: [] });
+
+      try {
+        const res = await fetch('https://your-bot-domain.onrender.com/miniapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action, value,
+            telegram_id: tg.initDataUnsafe.user.id,
+            username: tg.initDataUnsafe.user.username
+          })
+        });
+        const json = await res.json();
+        tg.showAlert(json.message || 'Done!');
+      } catch (err) {
+        tg.showAlert('Error: ' + err.message);
+      }
+    }
+
+    // SEND SUPPORT MESSAGE
+    async function sendSupport() {
+      const msg = document.getElementById('supportMsg').value.trim();
+      if (!msg) return alert('Please describe your issue.');
+      try {
+        const res = await fetch('https://your-bot-domain.onrender.com/miniapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'support', msg,
+            telegram_id: tg.initDataUnsafe.user.id,
+            username: tg.initDataUnsafe.user.username
+          })
+        });
+        const json = await res.json();
+        tg.showAlert(json.message || 'Support request sent!');
+      } catch (err) {
+        tg.showAlert('Error: ' + err.message);
+      }
     }
   </script>
 </body>
