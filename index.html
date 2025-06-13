@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Downloader Mini App</title>
+  <script src="https://unpkg.com/@twa-dev/sdk@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://tganalytics.vercel.app/analytics.js" async></script>
+  <script>
+    window.TgAnalyticsToken = "REPLACE_WITH_YOUR_TOKEN";
+  </script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; }
+    .fade-in { animation: fadeIn 1s ease-in forwards; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+  <!-- INTRO SCREEN -->
+  <div id="intro" class="flex flex-col items-center justify-center h-screen px-4 text-center fade-in">
+    <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" class="w-20 h-20 mb-4" alt="Male user" />
+    <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" class="w-20 h-20 mb-4" alt="Female user" />
+    <h1 class="text-2xl font-bold mb-2">Welcome to Social Downloader</h1>
+    <p class="text-gray-400">Convert and download videos, audio, and documents from top social apps.</p>
+  </div>
+
+  <!-- BOT INTERFACE -->
+  <div id="main" class="hidden h-screen p-4 fade-in">
+    <h2 class="text-xl font-semibold mb-4 text-center">📥 Telegram Downloader</h2>
+    <input
+      id="videoUrl"
+      type="text"
+      placeholder="Paste your video URL here..."
+      class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:outline-none mb-4"
+    />
+
+    <div class="flex flex-col space-y-3">
+      <button onclick="sendAction('download')" class="bg-blue-600 hover:bg-blue-700 rounded-lg py-2">⬇️ Download Video</button>
+      <button onclick="sendAction('audio')" class="bg-green-600 hover:bg-green-700 rounded-lg py-2">🎧 Convert to Audio</button>
+      <button onclick="sendAction('gif')" class="bg-yellow-600 hover:bg-yellow-700 rounded-lg py-2">🎞️ Convert to GIF</button>
+      <button onclick="sendAction('pdf')" class="bg-purple-600 hover:bg-purple-700 rounded-lg py-2">🖼️ Convert to PDF</button>
+    </div>
+
+    <div id="result" class="mt-6 text-center text-sm text-gray-400"></div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    // Auto-transition from intro to main UI
+    setTimeout(() => {
+      document.getElementById('intro').classList.add('hidden');
+      document.getElementById('main').classList.remove('hidden');
+    }, 5000);
+
+    function sendAction(action) {
+      const url = document.getElementById('videoUrl').value.trim();
+      if (!url) {
+        showResult("❌ Please enter a video URL.");
+        return;
+      }
+
+      // For demonstration: simulate response
+      showResult("⏳ Sending request...");
+
+      // You’ll replace this with actual API call to your bot backend if needed
+      setTimeout(() => {
+        showResult(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)} request sent for: ${url}`);
+        // Optionally: call tg.close() to close the Mini App
+      }, 1500);
+    }
+
+    function showResult(msg) {
+      document.getElementById("result").innerText = msg;
+    }
+  </script>
+</body>
+</html>
